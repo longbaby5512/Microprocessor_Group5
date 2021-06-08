@@ -106,7 +106,7 @@ bool writeToMemory(String ssid, String pass)
   pass.toCharArray(buff2, 30);
   EEPROM.writeString(100, buff1);
   EEPROM.writeString(200, buff2);
-  delayMicroseconds((int)100e3);
+  delayMilliseconds(100);
   String s = EEPROM.readString(100);
   String p = EEPROM.readString(200);
 
@@ -130,7 +130,7 @@ void handleSubmit()
   {
     server.send(200, "text/html", response_success);
     EEPROM.commit();
-    delayMicroseconds((uint32_t)3000e3);
+    delayMilliseconds(3000);
     ESP.restart();
   }
   else
