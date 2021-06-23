@@ -1,10 +1,16 @@
 #include "DHT22.h"
 
-DHT22::DHT22(int pin) : pin(pin) {}
+/**
+ * @brief Construct a new DHT22::DHT22 object
+ * @param pin pin connected microcontroller
+ */
+DHT22::DHT22(int pin) : pin(pin)
+{
+    resetTimer();
+}
 
 /**
  * @brief Setup pin connected microcontroller
- * 
  * @param pin pin connected microcontroller
  */
 void DHT22::setup(int pin)
@@ -13,11 +19,23 @@ void DHT22::setup(int pin)
     resetTimer();
 }
 
+/**
+ * @brief Check the sensor is working properly
+ * @return ERROR_NONE - No error, ERROR_TIMEOUT - Timeout error, ERROR_CHECKSUM - Checksum error
+ */
+DHT22::DHT_ERROR_t DHT22::getStatus() { return error; }
+
+/**
+ * @brief Reset timer for setup sensor
+ */
 void DHT22::resetTimer()
 {
     lastReadTime = millis() - 3000;
 }
 
+/**
+ * @brief Read the measured sensor value
+ */
 void DHT22::readSensor()
 {
     // Make sure we don't poll the sensor too often
@@ -132,6 +150,10 @@ void DHT22::readSensor()
     error = ERROR_NONE;
 }
 
+/**
+ * @brief Get  the temperature measured by the sensor
+ * @return temperature (celsius)
+ */
 float DHT22::getTemperature()
 {
     readSensor();
@@ -140,6 +162,10 @@ float DHT22::getTemperature()
     return temperature;
 }
 
+/**
+ * @brief Get the humidity measured by the sensor
+ * @return humidity (%) 
+ */
 float DHT22::getHumidity()
 {
     readSensor();
