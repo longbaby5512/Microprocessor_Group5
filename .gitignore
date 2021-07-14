@@ -3,3 +3,5 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+src/LiquidCrystal_I2C.cpp
+src/LiquidCrystal_I2C.h

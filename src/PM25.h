@@ -31,8 +31,8 @@ private:
 
     float dustDensity = 0; // Dust density value
 
-    void readSensor();            // Read the measured sensor value
-    float voltageConversion(int); // Returns voltage from the raw input value
+    void readSensor();              // Read the measured sensor value
+    float voltageConversion(float); // Returns voltage from the raw input value
 };
 
 #endif //PM25GP2Y10_H

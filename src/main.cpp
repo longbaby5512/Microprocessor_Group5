@@ -1,4 +1,5 @@
 #include "DHT22.h"
+#include "LiquidCrystal_I2C.h"
 #include "MQ7.h"
 #include "PM25.h"
 #include <Adafruit_MQTT.h>
@@ -6,6 +7,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <String>
+#include <Ticker.h>
 #include <WebServer.h>
 #include <WiFi.h>
 
@@ -13,6 +15,9 @@
 #define AIO_SERVERPORT 1883
 #define AIO_USERNAME "duclong1209"
 #define AIO_KEY "4127c18370b6431cb863c82b0c075c3d"
+
+const char char_o[] = {6, 9, 9, 6, 0, 0, 0, 0};
+const char char_3[] = {6, 1, 2, 1, 6, 0, 0, 0};
 
 const char INDEX_HTML[] =
     "<!DOCTYPE HTML>"
@@ -42,12 +47,18 @@ const char INDEX_HTML[] =
 /********* Variables *********/
 DHT22 dht(18);
 PM25 pm25(34, 19);
-MQ7 mq7(35, 21);
+MQ7 mq7(35, 5);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 WiFiServer wifi(80);
-WiFiClient client;
 WebServer server(80);
+
+WiFiClient client;
 Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
+Adafruit_MQTT_Publish temperatureAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.temperature");
+Adafruit_MQTT_Publish humidityAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.humidity");
+Adafruit_MQTT_Publish dustDensityAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.dustdensity");
+Adafruit_MQTT_Publish coAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.co");
 
 float temperature = 0;
 float humidity = 0;
@@ -55,7 +66,7 @@ float dustDensity = 0;
 float co = 0;
 
 /********* Function *********/
-void readSensor();
+void readSensor(void *);
 
 void printClient(WiFiServer, float, float, float, float, int);
 String sendHTML(float, float, float, int);
@@ -73,20 +84,32 @@ void setup()
   mq7.begin();
   EEPROM.begin(400);
 
+  lcd.init();
+  lcd.backlight();
+  lcd.setBacklight(HIGH);
+  lcd.setCursor(0, 0);
+  lcd.print("Wellcome to");
+  lcd.setCursor(0, 1);
+  lcd.print("my team");
+  delay(1000);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.createChar(1, char_o);
+  lcd.createChar(2, char_3);
+
   loadWiFi();
 
-  xTaskCreate(&mqttTask, "Adafruit MQTT", 2000, NULL, 2, NULL);
-  xTaskCreate(&webServerTask, "Web Server", 2000, NULL, 2, NULL);
+  xTaskCreate(&readSensor, "Read sensor", 2048, NULL, 3, NULL);
+  xTaskCreate(&mqttTask, "Adafruit MQTT", 2048, NULL, 2, NULL);
+  xTaskCreate(&webServerTask, "Web Server", 2048, NULL, 2, NULL);
 }
 
-void loop() {}
-
-void mqttTask(void *pvParameters)
+void loop()
 {
-  Adafruit_MQTT_Publish temperatureAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.temperature");
-  Adafruit_MQTT_Publish humidityAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.humidity");
-  Adafruit_MQTT_Publish dustDensityAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.dustdensity");
-  Adafruit_MQTT_Publish coAdafruit = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/air-info.co");
+}
+
+void mqttTask(void *pv)
+{
   for (;;)
   {
 
@@ -112,33 +135,67 @@ void mqttTask(void *pvParameters)
   }
 }
 
-void webServerTask(void *pvParameters)
+void webServerTask(void *pv)
 {
   for (;;)
   {
-    readSensor();
     printClient(wifi, temperature, humidity, dustDensity, co);
     delay(5000);
   }
 }
 
-void readSensor()
+/**
+ * @brief Read data from sensors
+ */
+void readSensor(void *pv)
 {
-  temperature = dht.getTemperature();  // Gets the values of the temperature
-  humidity = dht.getHumidity();        // Gets the values of the humidity
-  dustDensity = pm25.getDustDensity(); // Gets the values of the dust density
-  co = mq7.getPPM();                   // Gets the values of the CO
+  for (;;)
+  {
+    temperature = dht.getTemperature();  // Gets the values of the temperature
+    humidity = dht.getHumidity();        // Gets the values of the humidity
+    dustDensity = pm25.getDustDensity(); // Gets the values of the dust density
+    co = mq7.getPPM();                   // Gets the values of the CO
 
-  Serial.print("Temperature: ");
-  Serial.println(temperature);
-  Serial.print("Humidity: ");
-  Serial.println(humidity);
-  Serial.print("Dust Density: ");
-  Serial.println(dustDensity);
-  Serial.print("CO: ");
-  Serial.println(co);
+    Serial.print("Temperature: ");
+    Serial.println(temperature);
+    Serial.print("Humidity: ");
+    Serial.println(humidity);
+    Serial.print("Dust Density: ");
+    Serial.println(dustDensity);
+    Serial.print("CO: ");
+    Serial.println(co);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Temp: ");
+    lcd.print(temperature);
+    lcd.write(1);
+    lcd.print("C");
+
+    lcd.setCursor(0, 1);
+    lcd.print("Hum: ");
+    lcd.print(humidity);
+    lcd.print("%");
+    delay(2000);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("PM25: ");
+    lcd.print(dustDensity);
+    lcd.print("ug/m");
+    lcd.write(2);
+
+    lcd.setCursor(0, 1);
+    lcd.print("CO: ");
+    lcd.print(co);
+    lcd.print("ppm");
+    delay(2000);
+  }
 }
 
+/**
+ * @brief HTML with data had
+ */
 String sendHTML(float temperature, float humidity, float dustDensity, float co)
 {
   String str = "<!DOCTYPE html><html>\n";
@@ -199,6 +256,9 @@ void printClient(WiFiServer &sever, float temperature, float humidity, float dus
   }
 }
 
+/**
+ * @brief Check MQTT is connected
+ */
 void MQTT_connect()
 {
   int8_t ret;
@@ -228,6 +288,9 @@ void MQTT_connect()
   Serial.println("MQTT connected");
 }
 
+/**
+ * @brief Connect to WiFi
+ */
 void loadWiFi()
 {
 

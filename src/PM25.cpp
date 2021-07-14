@@ -22,17 +22,17 @@ void PM25::readSensor()
 {
     digitalWrite(ledPin, LOW); // Turn on IR
     delayMicroseconds(280);
-    int rawData = analogRead(analogPin);
+    float rawData = analogRead(analogPin);
 
     delayMicroseconds(40);
     digitalWrite(ledPin, HIGH); // Turn off IR
-    delayMicroseconds(9500);
+    delayMicroseconds(9680);
 
-    int voltage = voltageConversion(rawData);             // Convert from raw value to voltage
-    dustDensity = (0.17 * (voltage + 0.45) - 0.1) * 1000; // Convert from voltage to dust density
+    float voltage = voltageConversion(rawData);            // Convert from raw value to voltage
+    dustDensity = (0.17 * (voltage + 0.45) - 0.01) * 1000; // Convert from voltage to dust density
 
     if (dustDensity < 0)
-        dustDensity = NAN;
+        dustDensity = 0;
 }
 
 /**
@@ -53,7 +53,7 @@ float PM25::getDustDensity()
  * @param value : value from analogPin
  * @return voltage
  */
-float PM25::voltageConversion(int rawData)
+float PM25::voltageConversion(float rawData)
 {
-    return (float)rawData * (3.3 / 4095.0);
+    return (float)rawData * (3.3 / 4096.0);
 }
