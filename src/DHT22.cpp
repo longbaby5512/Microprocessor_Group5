@@ -59,7 +59,7 @@ void DHT22::readSensor()
     digitalWrite(pin, LOW); // Send start signal
     pinMode(pin, OUTPUT);
 
-    delayMicroseconds(2e3);
+    delay(2);
 
     pinMode(pin, INPUT);
     digitalWrite(pin, HIGH); // Switch bus to receive data

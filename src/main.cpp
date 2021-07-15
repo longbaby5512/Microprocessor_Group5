@@ -4,10 +4,8 @@
 #include "PM25.h"
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
-#include <Arduino.h>
 #include <EEPROM.h>
 #include <String>
-#include <Ticker.h>
 #include <WebServer.h>
 #include <WiFi.h>
 
