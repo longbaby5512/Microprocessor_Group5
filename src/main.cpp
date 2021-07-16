@@ -441,7 +441,8 @@ bool checkWiFiCreds()
     if (millis() - startTimeConnect > 60 * 1000)
     {
       Serial.println("False");
-      return false;
+      wipeEEPROM();
+      ESP.restart();
     }
   }
   Serial.println("");

@@ -22,8 +22,6 @@ public:
     PM25(int, int);         // Construct a new PM25::PM25 object
     void begin();           //Init pin mode for sensor
     float getDustDensity(); //Get dust density of air
-    int getRawValue();      //Get raw value
-    float getVoltage();     //Get voltage
 
 private:
     int analogPin; // Read value pin
